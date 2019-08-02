@@ -17,14 +17,11 @@
  */
 package info.multani.cassandra;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -40,45 +37,67 @@ public class ExternalFileSeedProvider implements SeedProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(ExternalFileSeedProvider.class);
 
+    String seedFile;
+
     public ExternalFileSeedProvider(Map<String, String> args) {
+        String filename = args.get("filename");
+        if (filename == null) {
+            logger.warn("External file seed provider initialized with no filename, ignoring");
+        } else {
+            seedFile = filename;
+            logger.info("Will read seeds from: {}", seedFile);
+        }
     }
 
     @Override
     public List<InetAddress> getSeeds() {
-        Config conf = DatabaseDescriptor.loadConfig();
+        String filename = seedFile;
 
-        String filename = conf.seed_provider.parameters.get("filename");
         if (filename == null) {
-            throw new AssertionError("no external seed file configured, check your configuration!");
+            Config conf = DatabaseDescriptor.loadConfig();
+
+            filename = conf.seed_provider.parameters.get("filename");
+            if (filename == null) {
+                logger.error("No external seed file has been configured, no seeds available.");
+                return Collections.emptyList();
+            }
         }
 
+        List<InetAddress> seeds = new ArrayList<>();
         logger.info("Reading seeds from file: {}", filename);
-        FileSystem fs = FileSystems.getDefault();
-        Path path = fs.getPath(filename);
 
-        Charset charset = Charset.forName("UTF-8");
-        List<String> hosts = new ArrayList<>();
         try {
-            hosts = Files.readAllLines(path, charset);
+            seeds = readSeeds(filename);
         } catch (IOException e) {
-            logger.warn("Unable to read seed file '{}'", path, e);
+            logger.warn("Unable to read seed file '{}'", filename, e);
         }
 
-        List<InetAddress> seeds = new ArrayList<>(hosts.size());
-        for (String host : hosts) {
-            String address = host.trim();
+        return Collections.unmodifiableList(seeds);
+    }
+
+    private List<InetAddress> readSeeds(String filename) throws IOException {
+        List<InetAddress> seeds = new ArrayList<>();
+
+        BufferedReader reader = new BufferedReader(new FileReader(filename));
+
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String address = line.replaceAll("#.*$", "").trim();
+
             if (address.length() == 0) {
+                // Skipping empty lines
                 continue;
             }
 
-            logger.debug("Adding host {}", address);
             try {
                 seeds.add(InetAddress.getByName(address));
+                logger.debug("Adding host {}", address);
             } catch (UnknownHostException ex) {
-                // not fatal... DD will bark if there end up being zero seeds.
                 logger.warn("Seed provider couldn't lookup host {}", address);
             }
         }
-        return Collections.unmodifiableList(seeds);
+
+        reader.close();
+        return seeds;
     }
 }
