@@ -66,12 +66,17 @@ public class ExternalFileSeedProvider implements SeedProvider {
 
         List<InetAddress> seeds = new ArrayList<>(hosts.size());
         for (String host : hosts) {
-            // TODO: filter out empty lines, lines starting with "\s*#", etc.
+            String address = host.trim();
+            if (address.length() == 0) {
+                continue;
+            }
+
+            logger.debug("Adding host {}", address);
             try {
-                seeds.add(InetAddress.getByName(host.trim()));
+                seeds.add(InetAddress.getByName(address));
             } catch (UnknownHostException ex) {
                 // not fatal... DD will bark if there end up being zero seeds.
-                logger.warn("Seed provider couldn't lookup host {}", host);
+                logger.warn("Seed provider couldn't lookup host {}", address);
             }
         }
         return Collections.unmodifiableList(seeds);
