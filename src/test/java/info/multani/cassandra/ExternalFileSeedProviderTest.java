@@ -5,7 +5,9 @@
  */
 package info.multani.cassandra;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.cassandra.config.DatabaseDescriptor;
+import org.apache.cassandra.locator.SeedProvider;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -13,35 +15,20 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cassandra.config.DatabaseDescriptor;
-import org.apache.cassandra.locator.SeedProvider;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 /**
- *
  * @author jballet
  */
 public class ExternalFileSeedProviderTest {
 
-    public ExternalFileSeedProviderTest() {
-    }
-
-    String getResourcePath(String resourceName) {
-        ClassLoader classLoader = getClass().getClassLoader();
-        return classLoader.getResource(resourceName).getFile();
-    }
-
-    /**
-     * Test of getSeeds method, of class ExternalFileSeedProvider.
-     * 
-     * @throws IOException
-     */
     @Test
     public void testGetSeedsFromGlobalConfig() throws IOException {
         String configFile = getResourcePath("external-seeds.yaml");
         System.setProperty("cassandra.config", "file://" + configFile);
 
         // TODO works only once?
+        //could be initlize once in @BeforeClass
         DatabaseDescriptor.daemonInitialization();
 
         SeedProvider p = new ExternalFileSeedProvider(Collections.emptyMap());
@@ -67,5 +54,10 @@ public class ExternalFileSeedProviderTest {
         assertEquals(InetAddress.getByName("127.1.0.44"), seeds.get(1));
         assertEquals(InetAddress.getByName("127.1.0.43"), seeds.get(2));
         assertEquals(InetAddress.getByName("127.1.0.45"), seeds.get(3));
+    }
+
+    String getResourcePath(String resourceName) {
+        ClassLoader classLoader = getClass().getClassLoader();
+        return classLoader.getResource(resourceName).getFile();
     }
 }
