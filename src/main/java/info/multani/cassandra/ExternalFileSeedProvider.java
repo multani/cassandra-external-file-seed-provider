@@ -17,63 +17,85 @@
  */
 package info.multani.cassandra;
 
+import org.apache.cassandra.config.Config;
+import org.apache.cassandra.config.DatabaseDescriptor;
+import org.apache.cassandra.locator.SeedProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 
-import org.apache.cassandra.locator.SeedProvider;
-import org.apache.cassandra.config.Config;
-import org.apache.cassandra.config.DatabaseDescriptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
+import static java.util.stream.Collectors.toList;
 
 public class ExternalFileSeedProvider implements SeedProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(ExternalFileSeedProvider.class);
 
+    private Optional<String> seedFile = Optional.empty();
+
     public ExternalFileSeedProvider(Map<String, String> args) {
+        String filename = args.get("filename");
+        if (filename == null) {
+            logger.warn("External file seed provider initialized with no filename, ignoring");
+        } else {
+            seedFile = Optional.of(filename);
+            logger.info("Will read seeds from: {}", seedFile);
+        }
     }
 
     @Override
     public List<InetAddress> getSeeds() {
+        Optional<String> filename = getFileName();
+        if (filename.isPresent()) {
+            return unmodifiableList(readSeeds(filename.get()));
+        } else {
+            logger.error("No external seed file has been configured, no seeds available.");
+            return emptyList();
+        }
+    }
+
+    private Optional<String> getFileName() {
+        if (seedFile.isPresent()) {
+            return seedFile;
+        }
+
         Config conf = DatabaseDescriptor.loadConfig();
+        return Optional.ofNullable(conf.seed_provider.parameters.get("filename"));
+    }
 
-        String filename = conf.seed_provider.parameters.get("filename");
-        if (filename == null) {
-            throw new AssertionError("no external seed file configured, check your configuration!");
-        }
+    private List<InetAddress> readSeeds(String filename) {
+        try (Stream<String> lines = Files.lines(Paths.get(filename))) {
+            return lines.map(line -> line.replaceAll("#.*$", "").trim())
+                    .filter(line -> !line.isEmpty())
+                    .map(this::getIPByName)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(toList());
 
-        logger.info("Reading seeds from file: {}", filename);
-        FileSystem fs = FileSystems.getDefault();
-        Path path = fs.getPath(filename);
-
-        Charset charset = Charset.forName("UTF-8");
-        List<String> hosts = new ArrayList<>();
-        try {
-            hosts = Files.readAllLines(path, charset);
         } catch (IOException e) {
-            logger.warn("Unable to read seed file '{}'", path, e);
+            logger.warn("Unable to read seed file '{}'", filename, e);
+            return emptyList();
         }
+    }
 
-        List<InetAddress> seeds = new ArrayList<>(hosts.size());
-        for (String host : hosts) {
-            // TODO: filter out empty lines, lines starting with "\s*#", etc.
-            try {
-                seeds.add(InetAddress.getByName(host.trim()));
-            } catch (UnknownHostException ex) {
-                // not fatal... DD will bark if there end up being zero seeds.
-                logger.warn("Seed provider couldn't lookup host {}", host);
-            }
+    private Optional<InetAddress> getIPByName(String address) {
+        try {
+            InetAddress ip = InetAddress.getByName(address);
+            logger.debug("Adding host {}", address);
+            return Optional.of(ip);
+        } catch (UnknownHostException ex) {
+            logger.warn("Seed provider couldn't lookup host {}", address);
+            return Optional.empty();
         }
-        return Collections.unmodifiableList(seeds);
     }
 }
