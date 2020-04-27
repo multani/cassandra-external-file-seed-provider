@@ -1,0 +1,29 @@
+name: Publish Package
+
+on:
+  push:
+    tags: ["*"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+        server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
+
+    - name: Bump version to tag
+      run: mvn -B --file pom.xml versions:set -DnewVersion=$(echo ${{ github.ref }} | rev | cut -d / -f 1 | rev)
+
+    - name: Build with Maven
+      run: mvn -B package --file pom.xml
+
+    - name: Publish to GitHub Packages Apache Maven
+      run: mvn -B deploy
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
