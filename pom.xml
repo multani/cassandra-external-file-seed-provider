@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>info.multani.cassandra</groupId>
   <artifactId>cassandra-external-file-seed-provider</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
 
   <distributionManagement>
     <repository>
