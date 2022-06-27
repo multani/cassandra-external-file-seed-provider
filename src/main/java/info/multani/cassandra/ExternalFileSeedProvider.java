@@ -20,11 +20,11 @@ package info.multani.cassandra;
 import org.apache.cassandra.config.Config;
 import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.locator.SeedProvider;
+import org.apache.cassandra.locator.InetAddressAndPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -44,7 +44,7 @@ public class ExternalFileSeedProvider implements SeedProvider {
     private Optional<String> seedFile = Optional.empty();
 
     public ExternalFileSeedProvider(Map<String, String> args) {
-        String filename = args.get("filename");
+        var filename = args.get("filename");
         if (filename == null) {
             logger.warn("External file seed provider initialized with no filename, ignoring");
         } else {
@@ -54,8 +54,8 @@ public class ExternalFileSeedProvider implements SeedProvider {
     }
 
     @Override
-    public List<InetAddress> getSeeds() {
-        Optional<String> filename = getFileName();
+    public List<InetAddressAndPort> getSeeds() {
+        var filename = getFileName();
         if (filename.isPresent()) {
             return unmodifiableList(readSeeds(filename.get()));
         } else {
@@ -69,11 +69,16 @@ public class ExternalFileSeedProvider implements SeedProvider {
             return seedFile;
         }
 
-        Config conf = DatabaseDescriptor.loadConfig();
-        return Optional.ofNullable(conf.seed_provider.parameters.get("filename"));
+        try {
+            var conf = DatabaseDescriptor.loadConfig();
+            return Optional.ofNullable(conf.seed_provider.parameters.get("filename"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
-    private List<InetAddress> readSeeds(String filename) {
+    private List<InetAddressAndPort> readSeeds(String filename) {
         try (Stream<String> lines = Files.lines(Paths.get(filename))) {
             return lines.map(line -> line.replaceAll("#.*$", "").trim())
                     .filter(line -> !line.isEmpty())
@@ -88,9 +93,9 @@ public class ExternalFileSeedProvider implements SeedProvider {
         }
     }
 
-    private Optional<InetAddress> getIPByName(String address) {
+    private Optional<InetAddressAndPort> getIPByName(String address) {
         try {
-            InetAddress ip = InetAddress.getByName(address);
+            var ip = InetAddressAndPort.getByName(address);
             logger.debug("Adding host {}", address);
             return Optional.of(ip);
         } catch (UnknownHostException ex) {

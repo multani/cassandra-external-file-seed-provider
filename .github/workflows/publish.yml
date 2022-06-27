@@ -9,12 +9,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-    - name: Set up JDK 1.8
-      uses: actions/setup-java@v1
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
       with:
-        java-version: 1.8
+        distribution: temurin
+        java-version: '11'
+        cache: 'maven'
         server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
 
     # https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
@@ -42,7 +44,7 @@ jobs:
 
     - name: Create Release
       id: create_release
-      uses: actions/create-release@v1.0.1
+      uses: actions/create-release@v1.1.4
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
