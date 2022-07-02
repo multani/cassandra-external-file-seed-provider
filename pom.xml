@@ -2,7 +2,9 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>info.multani.cassandra</groupId>
   <artifactId>cassandra-external-file-seed-provider</artifactId>
-  <version>0.0.2</version>
+
+  <!-- The version is overriden by the git tag during the CI releasse pipeline. -->
+  <version>0.0.1-SNAPSHOT</version>
 
   <distributionManagement>
     <repository>
