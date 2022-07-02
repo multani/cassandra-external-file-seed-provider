@@ -2,7 +2,7 @@ name: Publish Package
 
 on:
   push:
-    tags: ["*"]
+    tags: ["v*"]
 
 jobs:
   publish:
@@ -22,7 +22,7 @@ jobs:
     # https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
     - name: Get the version
       id: get_version
-      run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+      run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\/v/}
 
     - name: Bump version to tag
       run: mvn -B --file pom.xml versions:set -DnewVersion=${{ steps.get_version.outputs.VERSION }}
