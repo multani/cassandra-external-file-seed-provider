@@ -7,15 +7,15 @@ package info.multani.cassandra;
 
 import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.locator.SeedProvider;
-import org.junit.Test;
+import org.apache.cassandra.locator.InetAddressAndPort;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author jballet
@@ -33,11 +33,11 @@ public class ExternalFileSeedProviderTest {
 
         SeedProvider p = new ExternalFileSeedProvider(Collections.emptyMap());
 
-        List<InetAddress> seeds = p.getSeeds();
+        List<InetAddressAndPort> seeds = p.getSeeds();
         assertEquals(3, seeds.size());
-        assertEquals(InetAddress.getByName("127.0.0.42"), seeds.get(0));
-        assertEquals(InetAddress.getByName("127.0.0.43"), seeds.get(1));
-        assertEquals(InetAddress.getByName("127.0.0.44"), seeds.get(2));
+        assertEquals(InetAddressAndPort.getByName("127.0.0.42"), seeds.get(0));
+        assertEquals(InetAddressAndPort.getByName("127.0.0.43"), seeds.get(1));
+        assertEquals(InetAddressAndPort.getByName("127.0.0.44"), seeds.get(2));
     }
 
     @Test
@@ -48,12 +48,12 @@ public class ExternalFileSeedProviderTest {
 
         SeedProvider p = new ExternalFileSeedProvider(parameters);
 
-        List<InetAddress> seeds = p.getSeeds();
+        List<InetAddressAndPort> seeds = p.getSeeds();
         assertEquals(4, seeds.size());
-        assertEquals(InetAddress.getByName("127.1.0.42"), seeds.get(0));
-        assertEquals(InetAddress.getByName("127.1.0.44"), seeds.get(1));
-        assertEquals(InetAddress.getByName("127.1.0.43"), seeds.get(2));
-        assertEquals(InetAddress.getByName("127.1.0.45"), seeds.get(3));
+        assertEquals(InetAddressAndPort.getByName("127.1.0.42"), seeds.get(0));
+        assertEquals(InetAddressAndPort.getByName("127.1.0.44"), seeds.get(1));
+        assertEquals(InetAddressAndPort.getByName("127.1.0.43"), seeds.get(2));
+        assertEquals(InetAddressAndPort.getByName("127.1.0.45"), seeds.get(3));
     }
 
     String getResourcePath(String resourceName) {
