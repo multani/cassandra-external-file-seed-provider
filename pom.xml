@@ -15,7 +15,6 @@
   </distributionManagement>
 
   <properties>
-    <cassandra-version>4.1.11</cassandra-version>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <maven.compiler.release>11</maven.compiler.release>
@@ -27,7 +26,7 @@
     <dependency>
       <groupId>org.apache.cassandra</groupId>
       <artifactId>cassandra-all</artifactId>
-      <version>${cassandra-version}</version>
+      <version>4.1.11</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
