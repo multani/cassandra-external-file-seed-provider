@@ -6,7 +6,6 @@ seed_provider:
 
 # Mandatory
 commitlog_sync: batch
-commitlog_sync_batch_window_in_ms: 1.0
 commitlog_directory: target/cassandra/commitlog
 hints_directory: target/cassandra/hints
 cdc_raw_directory: target/cassandra/cdc_raw
@@ -45,4 +44,3 @@ compaction_throughput_mb_per_sec: 0
 row_cache_class_name: org.apache.cassandra.cache.OHCProvider
 row_cache_size_in_mb: 16
 enable_user_defined_functions: true
-enable_scripted_user_defined_functions: true
